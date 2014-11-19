@@ -2,9 +2,14 @@
 
 This is just the angular strap popover directive from the AngularStrap project with the following changes:
 
-* The $tooltip service has been renamed to bsTooltip to prevent conflicts with the ui-boostrap library
+* The $tooltip service has been renamed to bsTooltip to prevent conflicts with the ui-bootstrap library
 * The $popover service has been renamed to bsPopover for consistency
 * A popover:hide event is listened on so if you need to close all popovers within the app at once simply emit this event.
+
+This repo was created so that you can use it with the ui-bootstrap project which currently has limited support for popovers.
+This module adds support for html in popovers as well as being able to open / show popovers via a custom trigger which ui-bootstrap currently doesn't provide.
+
+All credits go to the original author Olivier Louvignes.
 
 ## Documentation and examples
 
