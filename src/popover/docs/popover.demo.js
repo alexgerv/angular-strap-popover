@@ -2,8 +2,8 @@
 
 angular.module('mgcrea.ngStrapDocs')
 
-.config(function($popoverProvider) {
-  angular.extend($popoverProvider.defaults, {
+.config(function(bsPopoverProvider) {
+  angular.extend(bsPopoverProvider.defaults, {
     html: true
   });
 })

@@ -1,5 +1,386 @@
+/**
+ * angular-strap-popover
+ * @version v2.1.3 - 2014-11-19
+ * @link http://mgcrea.github.io/angular-strap
+ * @author Olivier Louvignes (olivier@mg-crea.com)
+ * @license MIT License, http://www.opensource.org/licenses/MIT
+ */
+(function(window, document, undefined) {
 'use strict';
+// Source: module.js
+angular.module('mgcrea.ngStrap', [
+  'mgcrea.ngStrap.tooltip',
+  'mgcrea.ngStrap.popover',
+]);
 
+// Source: debounce.js
+angular.module('mgcrea.ngStrap.helpers.debounce', [])
+
+// @source jashkenas/underscore
+// @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L693
+  .factory('debounce', ["$timeout", function($timeout) {
+    return function(func, wait, immediate) {
+      var timeout = null;
+      return function() {
+        var context = this,
+          args = arguments,
+          callNow = immediate && !timeout;
+        if(timeout) {
+          $timeout.cancel(timeout);
+        }
+        timeout = $timeout(function later() {
+          timeout = null;
+          if(!immediate) {
+            func.apply(context, args);
+          }
+        }, wait, false);
+        if(callNow) {
+          func.apply(context, args);
+        }
+        return timeout;
+      };
+    };
+  }])
+
+
+// @source jashkenas/underscore
+// @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L661
+  .factory('throttle', ["$timeout", function($timeout) {
+    return function(func, wait, options) {
+      var timeout = null;
+      options || (options = {});
+      return function() {
+        var context = this,
+          args = arguments;
+        if(!timeout) {
+          if(options.leading !== false) {
+            func.apply(context, args);
+          }
+          timeout = $timeout(function later() {
+            timeout = null;
+            if(options.trailing !== false) {
+              func.apply(context, args);
+            }
+          }, wait, false);
+        }
+      };
+    };
+  }]);
+
+// Source: dimensions.js
+angular.module('mgcrea.ngStrap.helpers.dimensions', [])
+
+  .factory('dimensions', ["$document", "$window", function($document, $window) {
+
+    var jqLite = angular.element;
+    var fn = {};
+
+    /**
+     * Test the element nodeName
+     * @param element
+     * @param name
+     */
+    var nodeName = fn.nodeName = function(element, name) {
+      return element.nodeName && element.nodeName.toLowerCase() === name.toLowerCase();
+    };
+
+    /**
+     * Returns the element computed style
+     * @param element
+     * @param prop
+     * @param extra
+     */
+    fn.css = function(element, prop, extra) {
+      var value;
+      if (element.currentStyle) { //IE
+        value = element.currentStyle[prop];
+      } else if (window.getComputedStyle) {
+        value = window.getComputedStyle(element)[prop];
+      } else {
+        value = element.style[prop];
+      }
+      return extra === true ? parseFloat(value) || 0 : value;
+    };
+
+    /**
+     * Provides read-only equivalent of jQuery's offset function:
+     * @required-by bootstrap-tooltip, bootstrap-affix
+     * @url http://api.jquery.com/offset/
+     * @param element
+     */
+    fn.offset = function(element) {
+      var boxRect = element.getBoundingClientRect();
+      var docElement = element.ownerDocument;
+      return {
+        width: boxRect.width || element.offsetWidth,
+        height: boxRect.height || element.offsetHeight,
+        top: boxRect.top + (window.pageYOffset || docElement.documentElement.scrollTop) - (docElement.documentElement.clientTop || 0),
+        left: boxRect.left + (window.pageXOffset || docElement.documentElement.scrollLeft) - (docElement.documentElement.clientLeft || 0)
+      };
+    };
+
+    /**
+     * Provides read-only equivalent of jQuery's position function
+     * @required-by bootstrap-tooltip, bootstrap-affix
+     * @url http://api.jquery.com/offset/
+     * @param element
+     */
+    fn.position = function(element) {
+
+      var offsetParentRect = {top: 0, left: 0},
+          offsetParentElement,
+          offset;
+
+      // Fixed elements are offset from window (parentOffset = {top:0, left: 0}, because it is it's only offset parent
+      if (fn.css(element, 'position') === 'fixed') {
+
+        // We assume that getBoundingClientRect is available when computed position is fixed
+        offset = element.getBoundingClientRect();
+
+      } else {
+
+        // Get *real* offsetParentElement
+        offsetParentElement = offsetParent(element);
+
+        // Get correct offsets
+        offset = fn.offset(element);
+        if (!nodeName(offsetParentElement, 'html')) {
+          offsetParentRect = fn.offset(offsetParentElement);
+        }
+
+        // Add offsetParent borders
+        offsetParentRect.top += fn.css(offsetParentElement, 'borderTopWidth', true);
+        offsetParentRect.left += fn.css(offsetParentElement, 'borderLeftWidth', true);
+      }
+
+      // Subtract parent offsets and element margins
+      return {
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        top: offset.top - offsetParentRect.top - fn.css(element, 'marginTop', true),
+        left: offset.left - offsetParentRect.left - fn.css(element, 'marginLeft', true)
+      };
+
+    };
+
+    /**
+     * Returns the closest, non-statically positioned offsetParent of a given element
+     * @required-by fn.position
+     * @param element
+     */
+    var offsetParent = function offsetParentElement(element) {
+      var docElement = element.ownerDocument;
+      var offsetParent = element.offsetParent || docElement;
+      if(nodeName(offsetParent, '#document')) return docElement.documentElement;
+      while(offsetParent && !nodeName(offsetParent, 'html') && fn.css(offsetParent, 'position') === 'static') {
+        offsetParent = offsetParent.offsetParent;
+      }
+      return offsetParent || docElement.documentElement;
+    };
+
+    /**
+     * Provides equivalent of jQuery's height function
+     * @required-by bootstrap-affix
+     * @url http://api.jquery.com/height/
+     * @param element
+     * @param outer
+     */
+    fn.height = function(element, outer) {
+      var value = element.offsetHeight;
+      if(outer) {
+        value += fn.css(element, 'marginTop', true) + fn.css(element, 'marginBottom', true);
+      } else {
+        value -= fn.css(element, 'paddingTop', true) + fn.css(element, 'paddingBottom', true) + fn.css(element, 'borderTopWidth', true) + fn.css(element, 'borderBottomWidth', true);
+      }
+      return value;
+    };
+
+    /**
+     * Provides equivalent of jQuery's width function
+     * @required-by bootstrap-affix
+     * @url http://api.jquery.com/width/
+     * @param element
+     * @param outer
+     */
+    fn.width = function(element, outer) {
+      var value = element.offsetWidth;
+      if(outer) {
+        value += fn.css(element, 'marginLeft', true) + fn.css(element, 'marginRight', true);
+      } else {
+        value -= fn.css(element, 'paddingLeft', true) + fn.css(element, 'paddingRight', true) + fn.css(element, 'borderLeftWidth', true) + fn.css(element, 'borderRightWidth', true);
+      }
+      return value;
+    };
+
+    return fn;
+
+  }]);
+
+// Source: raf.js
+(angular.version.minor < 3 && angular.version.dot < 14) && angular.module('ng')
+
+  .factory('$$rAF', ["$window", "$timeout", function($window, $timeout) {
+
+    var requestAnimationFrame = $window.requestAnimationFrame ||
+      $window.webkitRequestAnimationFrame ||
+      $window.mozRequestAnimationFrame;
+
+    var cancelAnimationFrame = $window.cancelAnimationFrame ||
+      $window.webkitCancelAnimationFrame ||
+      $window.mozCancelAnimationFrame ||
+      $window.webkitCancelRequestAnimationFrame;
+
+    var rafSupported = !!requestAnimationFrame;
+    var raf = rafSupported ?
+      function(fn) {
+        var id = requestAnimationFrame(fn);
+        return function() {
+          cancelAnimationFrame(id);
+        };
+      } :
+      function(fn) {
+        var timer = $timeout(fn, 16.66, false); // 1000 / 60 = 16.666
+        return function() {
+          $timeout.cancel(timer);
+        };
+      };
+
+    raf.supported = rafSupported;
+
+    return raf;
+
+  }]);
+
+// .factory('$$animateReflow', function($$rAF, $document) {
+
+//   var bodyEl = $document[0].body;
+
+//   return function(fn) {
+//     //the returned function acts as the cancellation function
+//     return $$rAF(function() {
+//       //the line below will force the browser to perform a repaint
+//       //so that all the animated elements within the animation frame
+//       //will be properly updated and drawn on screen. This is
+//       //required to perform multi-class CSS based animations with
+//       //Firefox. DO NOT REMOVE THIS LINE.
+//       var a = bodyEl.offsetWidth + 1;
+//       fn();
+//     });
+//   };
+
+// });
+
+// Source: popover.js
+angular.module('mgcrea.ngStrap.popover', ['mgcrea.ngStrap.tooltip'])
+
+  .provider('bsPopover', function() {
+
+    var defaults = this.defaults = {
+      animation: 'am-fade',
+      customClass: '',
+      container: false,
+      target: false,
+      placement: 'right',
+      template: 'popover/popover.tpl.html',
+      contentTemplate: false,
+      trigger: 'click',
+      keyboard: true,
+      html: false,
+      title: '',
+      content: '',
+      delay: 0,
+      autoClose: false
+    };
+
+    this.$get = ["bsTooltip", function(bsTooltip) {
+
+      function PopoverFactory(element, config) {
+
+        // Common vars
+        var options = angular.extend({}, defaults, config);
+
+        var $popover = bsTooltip(element, options);
+
+        // Support scope as string options [/*title, */content]
+        if(options.content) {
+          $popover.$scope.content = options.content;
+        }
+
+        return $popover;
+
+      }
+
+      return PopoverFactory;
+
+    }];
+
+  })
+
+  .directive('bsPopover', ["$window", "$sce", "bsPopover", function($window, $sce, bsPopover) {
+
+    var requestAnimationFrame = $window.requestAnimationFrame || $window.setTimeout;
+
+    return {
+      restrict: 'EAC',
+      scope: true,
+      link: function postLink(scope, element, attr) {
+
+        // Directive options
+        var options = {scope: scope};
+        angular.forEach(['template', 'contentTemplate', 'placement', 'container', 'target', 'delay', 'trigger', 'keyboard', 'html', 'animation', 'customClass', 'autoClose'], function(key) {
+          if(angular.isDefined(attr[key])) options[key] = attr[key];
+        });
+
+        // Support scope as data-attrs
+        angular.forEach(['title', 'content'], function(key) {
+          attr[key] && attr.$observe(key, function(newValue, oldValue) {
+            scope[key] = $sce.trustAsHtml(newValue);
+            angular.isDefined(oldValue) && requestAnimationFrame(function() {
+              popover && popover.$applyPlacement();
+            });
+          });
+        });
+
+        // Support scope as an object
+        attr.bsPopover && scope.$watch(attr.bsPopover, function(newValue, oldValue) {
+          if(angular.isObject(newValue)) {
+            angular.extend(scope, newValue);
+          } else {
+            scope.content = newValue;
+          }
+          angular.isDefined(oldValue) && requestAnimationFrame(function() {
+            popover && popover.$applyPlacement();
+          });
+        }, true);
+
+        // Visibility binding support
+        attr.bsShow && scope.$watch(attr.bsShow, function(newValue, oldValue) {
+          if(!popover || !angular.isDefined(newValue)) return;
+          if(angular.isString(newValue)) newValue = !!newValue.match(/true|,?(popover),?/i);
+          newValue === true ? popover.show() : popover.hide();
+        });
+
+        // Initialize popover
+        var popover = bsPopover(element, options);
+
+        // Garbage collection
+        scope.$on('$destroy', function() {
+          if (popover) popover.destroy();
+          options = null;
+          popover = null;
+        });
+
+        //Support for closing all popovers on event broadcast
+        scope.$on('popover:hide', function() {
+          popover.hide();
+        });
+
+      }
+    };
+
+  }]);
+
+// Source: tooltip.js
 angular.module('mgcrea.ngStrap.tooltip', ['mgcrea.ngStrap.helpers.dimensions'])
 
   .provider('bsTooltip', function() {
@@ -25,7 +406,7 @@ angular.module('mgcrea.ngStrap.tooltip', ['mgcrea.ngStrap.helpers.dimensions'])
       bsEnabled: true
     };
 
-    this.$get = function($window, $rootScope, $compile, $q, $templateCache, $http, $animate, dimensions, $$rAF, $timeout) {
+    this.$get = ["$window", "$rootScope", "$compile", "$q", "$templateCache", "$http", "$animate", "dimensions", "$$rAF", "$timeout", function($window, $rootScope, $compile, $q, $templateCache, $http, $animate, dimensions, $$rAF, $timeout) {
 
       var trim = String.prototype.trim;
       var isTouch = 'createTouch' in $window.document;
@@ -531,11 +912,11 @@ angular.module('mgcrea.ngStrap.tooltip', ['mgcrea.ngStrap.helpers.dimensions'])
 
       return TooltipFactory;
 
-    };
+    }];
 
   })
 
-  .directive('bsTooltip', function($window, $location, $sce, bsTooltip, $$rAF) {
+  .directive('bsTooltip', ["$window", "$location", "$sce", "bsTooltip", "$$rAF", function($window, $location, $sce, bsTooltip, $$rAF) {
 
     return {
       restrict: 'EAC',
@@ -605,4 +986,6 @@ angular.module('mgcrea.ngStrap.tooltip', ['mgcrea.ngStrap.helpers.dimensions'])
       }
     };
 
-  });
+  }]);
+
+})(window, document);

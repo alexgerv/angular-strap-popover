@@ -2,13 +2,13 @@
 
 angular.module('mgcrea.ngStrapDocs')
 
-.config(function($tooltipProvider) {
-  angular.extend($tooltipProvider.defaults, {
+.config(function(bsTooltipProvider) {
+  angular.extend(bsTooltipProvider.defaults, {
     html: true
   });
 })
 
-.controller('TooltipDemoCtrl', function($scope, $q, $sce, $tooltip) {
+.controller('TooltipDemoCtrl', function($scope, $q, $sce, bsTooltip) {
 
   $scope.tooltip = {title: 'Hello Tooltip<br />This is a multiline message!', checked: false};
 

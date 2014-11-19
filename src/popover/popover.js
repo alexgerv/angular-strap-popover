@@ -2,7 +2,7 @@
 
 angular.module('mgcrea.ngStrap.popover', ['mgcrea.ngStrap.tooltip'])
 
-  .provider('$popover', function() {
+  .provider('bsPopover', function() {
 
     var defaults = this.defaults = {
       animation: 'am-fade',
@@ -21,14 +21,14 @@ angular.module('mgcrea.ngStrap.popover', ['mgcrea.ngStrap.tooltip'])
       autoClose: false
     };
 
-    this.$get = function($tooltip) {
+    this.$get = function(bsTooltip) {
 
       function PopoverFactory(element, config) {
 
         // Common vars
         var options = angular.extend({}, defaults, config);
 
-        var $popover = $tooltip(element, options);
+        var $popover = bsTooltip(element, options);
 
         // Support scope as string options [/*title, */content]
         if(options.content) {
@@ -45,7 +45,7 @@ angular.module('mgcrea.ngStrap.popover', ['mgcrea.ngStrap.tooltip'])
 
   })
 
-  .directive('bsPopover', function($window, $sce, $popover) {
+  .directive('bsPopover', function($window, $sce, bsPopover) {
 
     var requestAnimationFrame = $window.requestAnimationFrame || $window.setTimeout;
 
@@ -90,13 +90,18 @@ angular.module('mgcrea.ngStrap.popover', ['mgcrea.ngStrap.tooltip'])
         });
 
         // Initialize popover
-        var popover = $popover(element, options);
+        var popover = bsPopover(element, options);
 
         // Garbage collection
         scope.$on('$destroy', function() {
           if (popover) popover.destroy();
           options = null;
           popover = null;
+        });
+
+        //Support for closing all popovers on event broadcast
+        scope.$on('popover:hide', function() {
+          popover.hide();
         });
 
       }

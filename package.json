@@ -1,10 +1,11 @@
 {
-  "name": "angular-strap",
-  "description": "AngularStrap - AngularJS directives for Bootstrap",
+  "name": "angular-strap-popover",
+  "description": "AngularStrap - AngularJS popover directive for Bootstrap",
   "version": "2.1.3",
   "keywords": [
     "angular",
-    "bootstrap"
+    "bootstrap",
+    "popover"
   ],
   "homepage": "http://mgcrea.github.io/angular-strap",
   "bugs": "https://github.com/mgcrea/angular-strap/issues",
@@ -15,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mgcrea/angular-strap.git"
+    "url": "https://github.com/mattlewis92/angular-strap-popover.git"
   },
   "licenses": [
     {
