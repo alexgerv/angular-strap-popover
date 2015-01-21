@@ -25,8 +25,8 @@
     }
   ],
   "main": [
-    "dist/angular-strap.js",
-    "dist/angular-strap.tpl.js"
+    "dist/angular-strap-popover.js",
+    "dist/angular-strap-popover.tpl.js"
   ],
   "ignore": [
     "docs",
